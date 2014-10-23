@@ -1,0 +1,17 @@
+{
+  "name": "element-queries",
+  "version": "0.1.0",
+  "homepage": "",
+  "authors": [
+    "Daniel Buchner"
+  ],
+  "description": "Element media queries",
+  "main": ["src/main.js","src/main.css"],
+  "keywords": [
+    "media-queries",
+    "element",
+    "dom",
+    "html5"
+  ],
+  "license": "MIT"
+}
