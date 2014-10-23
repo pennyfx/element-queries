@@ -1,10 +1,11 @@
 (function(){
-  
+
   var isIE = /*@cc_on!@*/0;
   var queryRegExp = /query\((.+?(?=\)\s*query|\)$))/ig;
   var mediaRule = ' @media {rule} { [query-id="{id}"] { opacity: 1; } }';
   var baseRule = 'html, body { margin: 0; padding: 0 } div { -webkit-transition: opacity 0.01s; -ms-transition: opacity 0.01s; -o-transition: opacity 0.01s; transition: opacity 0.01s; opacity: 0; }';
-  
+  function debounce(d,e,f){var g;return function(){var a=this,args=arguments;var b=function(){g=null;if(!f)d.apply(a,args)};var c=f&&!g;clearTimeout(g);g=setTimeout(b,e);if(c)d.apply(a,args)}};
+
   function attachObject(box){
     var obj = document.createElement('object');
     obj.__querybox__ = box;
@@ -15,7 +16,7 @@
     if (isIE) obj.data = 'about:blank'; // must add data source after insertion, because IE is a goon
     return obj;
   }
-  
+
   function objectLoad(e){
     var box = this.__querybox__;
     var doc = box.__eq__.doc = this.contentDocument;
@@ -27,29 +28,19 @@
     parseQueries(box);
     box.__eq__.loaded = true;
   }
-  
-  var requestFrame = window.requestAnimationFrame ||
-                    window.mozRequestAnimationFrame ||
-                    window.webkitRequestAnimationFrame ||
-                    function(fn){ return window.setTimeout(fn, 20); };
-  
-  function debounceMatching(){
-    var doc = this;
-    if (!doc.__matching__) {
-      doc.__matching__ = requestFrame(function(){
-        getMatches(doc);
-        doc.__matching__ = null;
-      });
-    };
-  }
-  
+
+  var debounceMatching = debounce(function(){
+      var doc = this;
+      getMatches(doc);
+    }, 20);
+
   function setStyle(doc, rules){
     var style = doc.createElement('style');
     style.innerHTML = rules;
     if (doc.head.firstChild) doc.head.removeChild(doc.head.firstChild);
     doc.head.appendChild(style);
   }
-  
+
   function parseQueries(box){
     var media = box.getAttribute('media');
     if (media != null) {
@@ -69,7 +60,7 @@
       getMatches(doc);
     }
   }
-  
+
   function getMatches(doc){
     var matches = [];
     var box = doc.__querybox__;
@@ -77,27 +68,28 @@
     var index = nodes.length;
     while (index--) {
       // if you don't use the <object> defaultView's getComputedStyle, Firefox evaluates the query incorrectly
-      if (doc.defaultView.getComputedStyle(nodes[index]).opacity == '1') {
+      var opacity = Math.ceil(doc.defaultView.getComputedStyle(nodes[index]).opacity);
+      if (opacity == 1) {
         matches.push(nodes[index].getAttribute('query-id'));
       }
     }
     box.setAttribute('matched-media', matches.join(' '));
   }
-  
+
   window.attachQuerySensor = function(box){
     if (!box.__eq__) {
       box.__eq__ = {};
       box.__eq__.object = attachObject(box);
     }
   };
-  
+
   window.detachQuerySensor = function(box){
     if (box.__eq__) {
       box.removeChild(box.__eq__.object);
       delete box.__eq__;
     }
   };
-  
+
   var setAttr = Element.prototype.setAttribute;
   Element.prototype.setAttribute = function(name){
     setAttr.apply(this, arguments);
@@ -106,13 +98,13 @@
       else attachQuerySensor(this);
     }
   }
-  
+
   function initialize(){
     var nodes = document.body.querySelectorAll('body [media]:not(style)');
     var index = nodes.length;
     while (index--) attachQuerySensor(nodes[index]);
   }
-  
+
   if (document.readyState == 'complete') initialize();
   else document.addEventListener('DOMContentLoaded', initialize);
 
